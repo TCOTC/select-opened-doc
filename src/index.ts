@@ -20,10 +20,11 @@ export default class SelectOpenedDocPlugin extends Plugin {
         // 加载配置
         await this.loadData(STORAGE_NAME);
         // 默认配置
+        this.data[STORAGE_NAME] ||= {}; // 默认是空字符串，所以用 ||? 而不是 ??=
         this.data[STORAGE_NAME].desktopFoldKey ??= "right"; // 默认是鼠标右键折叠文档树
-        this.data[STORAGE_NAME].mobileFoldKey ??= "click"; // 默认是单击折叠文档树
+        this.data[STORAGE_NAME].mobileFoldKey ??= "longPress"; // 默认是长按折叠文档树
         this.data[STORAGE_NAME].changeButtonText ??= // 如果是插件 i18n 支持的语种，则默认修改按钮文案，否则不修改
-            ["zh-CN", "en-US"].includes(window.siyuan.config.lang) ? true : false;
+            ["zh_CN", "zh_CHT", "en_US"].includes(window.siyuan.config.lang) ? true : false;
 
         // 插件设置
         this.setting = new Setting({
@@ -76,6 +77,7 @@ export default class SelectOpenedDocPlugin extends Plugin {
             // 需要 await 等待配置更新完成之后再使用 this.data[STORAGE_NAME]，否则会使用旧的配置
             await this.saveData(STORAGE_NAME, {
                 desktopFoldKey: desktopFoldKeyElement.value,
+                mobileFoldKey: mobileFoldKeyElement.value,
                 changeButtonText: changeButtonTextElement.checked
             });
 
@@ -93,11 +95,11 @@ export default class SelectOpenedDocPlugin extends Plugin {
         }
 
         // 为左键和右键单击添加相应的监听器
-        this.focusButton.addEventListener('click', this.clickHandler);
+        this.focusButton.addEventListener('click', this.leftClickHandler);
         this.focusButton.addEventListener('contextmenu', this.rightClickHandler);
         // 移动端监听触摸事件
-        this.focusButton.addEventListener('touchstart', this.touchstartHandler);
-        this.focusButton.addEventListener('touchend', this.touchendHandler);
+        this.focusButton.addEventListener('touchstart', this.touchstartHandler, { passive: false });
+        this.focusButton.addEventListener('touchend', this.touchendHandler, { passive: false });
 
         // 修改按钮文案
         this.changeButtonText(true);
@@ -107,7 +109,7 @@ export default class SelectOpenedDocPlugin extends Plugin {
 
     onunload() {
         // 卸载事件监听器
-        this.focusButton.removeEventListener('click', this.clickHandler);
+        this.focusButton.removeEventListener('click', this.leftClickHandler);
         this.focusButton.removeEventListener('contextmenu', this.rightClickHandler);
         this.focusButton.removeEventListener('touchstart', this.touchstartHandler);
         this.focusButton.removeEventListener('touchend', this.touchendHandler);
@@ -117,7 +119,7 @@ export default class SelectOpenedDocPlugin extends Plugin {
 
     async uninstall() {
         // 卸载事件监听器
-        this.focusButton.removeEventListener('click', this.clickHandler);
+        this.focusButton.removeEventListener('click', this.leftClickHandler);
         this.focusButton.removeEventListener('contextmenu', this.rightClickHandler);
         this.focusButton.removeEventListener('touchstart', this.touchstartHandler);
         this.focusButton.removeEventListener('touchend', this.touchendHandler);
@@ -144,39 +146,40 @@ export default class SelectOpenedDocPlugin extends Plugin {
         }
     }
 
-    private clickHandler = (e: MouseEvent) => {
+    private leftClickHandler = (e: MouseEvent) => {
         e.preventDefault();
-        if (this.isMobile) {
-            this.collapseDocTree("click");
-        } else {
-            this.collapseDocTree("left");
-        }
+        this.collapseDocTree("left");
     }
 
     private rightClickHandler = (e: MouseEvent) => {
         e.preventDefault();
-        if (this.isMobile) {
-            this.collapseDocTree("longPress");
-        } else {
-            this.collapseDocTree("right");
-        }
+        this.collapseDocTree("right");
     }
 
     // 用于存储长按定时器的 ID
     private longPressTimeout: ReturnType<typeof setTimeout> | undefined;
 
+    // 用于避免触发 longPress 之后后重复触发 click
+    private isLongPress = false;
+
     private touchstartHandler = (e: TouchEvent) => {
         e.preventDefault();
-        // 开始计时，如果 500ms 内没有 touchend 事件，则认为是长按
+        // 开始计时，如果 300ms 内没有 touchend 事件，则认为是长按
         this.longPressTimeout = setTimeout(() => {
+            this.isLongPress = true;
             this.collapseDocTree("longPress");
-        }, 500);
+        }, 300);
     }
 
     private touchendHandler = (e: TouchEvent) => {
         e.preventDefault();
         // 清除长按定时器
         clearTimeout(this.longPressTimeout);
+        if (this.isLongPress) {
+            this.isLongPress = false;
+        } else {
+            this.collapseDocTree("click");
+        }
     }
 
     // mousedown mouseup 跟 click 冲突了，导致触发两次，所以不使用
@@ -196,6 +199,7 @@ export default class SelectOpenedDocPlugin extends Plugin {
             // TODO: 定位文档树并且折叠其他路径展开的文档，使用 getActiveEditor
             const fileTreeLists = document.querySelectorAll(".layout-tab-container > .file-tree > .fn__flex-1 > ul.b3-list[data-url]");
 
+            // TODO: 适配移动端，看看思源源码
             fileTreeLists.forEach(list => {
                 const fragment = new DocumentFragment();
                 Array.from(list.children).forEach(item => {
@@ -230,7 +234,7 @@ export default class SelectOpenedDocPlugin extends Plugin {
         // TODO跟进: 换成原生方法 https://github.com/siyuan-note/siyuan/issues/15639
         
         // 移除点击事件监听器，避免模拟点击触发事件监听器
-        this.focusButton.removeEventListener('click', this.clickHandler);
+        this.focusButton.removeEventListener('click', this.leftClickHandler);
 
         // 模拟点击按钮
         if (typeof this.focusButton.click === 'function') {
@@ -248,7 +252,7 @@ export default class SelectOpenedDocPlugin extends Plugin {
     
         // 恢复点击事件监听器
         setTimeout(() => {
-            this.focusButton.addEventListener('click', this.clickHandler);
+            this.focusButton.addEventListener('click', this.leftClickHandler);
         }, 0);
     }
 }
