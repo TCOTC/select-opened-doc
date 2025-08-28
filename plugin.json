@@ -2,7 +2,7 @@
   "name": "select-opened-doc",
   "author": "TCOTC",
   "url": "https://github.com/TCOTC/select-opened-doc",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "minAppVersion": "3.3.0",
   "backends": [
     "all"
