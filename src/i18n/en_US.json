@@ -5,8 +5,8 @@
   "onloadFailed": "Plugin failed to load",
   "desktopFoldKey": "Desktop fold and locate method",
   "changeButtonText": "Change button text",
-  "buttonTextLeft": "Left fold and locate, right locate",
-  "buttonTextRight": "Left locate, right fold and locate",
+  "buttonTextLeft": "Left fold and locate, Right locate",
+  "buttonTextRight": "Left locate, Right fold and locate",
   "mobileFoldKey": "Mobile fold and locate method",
   "mobileFoldKeyClick": "Click fold and locate",
   "mobileFoldKeyLongPress": "Long press fold and locate"
