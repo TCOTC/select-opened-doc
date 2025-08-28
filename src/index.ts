@@ -113,6 +113,9 @@ export default class SelectOpenedDocPlugin extends Plugin {
         this.focusButton.removeEventListener('touchstart', this.touchstartHandler);
         this.focusButton.removeEventListener('touchend', this.touchendHandler);
 
+        // 还原按钮文案
+        this.restoreButtonText();
+
         console.log(this.displayName, this.i18n.onunload);
     }
 
@@ -122,6 +125,9 @@ export default class SelectOpenedDocPlugin extends Plugin {
         this.focusButton.removeEventListener('contextmenu', this.rightClickHandler);
         this.focusButton.removeEventListener('touchstart', this.touchstartHandler);
         this.focusButton.removeEventListener('touchend', this.touchendHandler);
+
+        // 还原按钮文案
+        this.restoreButtonText();
 
         // 删除配置
         await this.removeData(STORAGE_NAME);
@@ -141,8 +147,13 @@ export default class SelectOpenedDocPlugin extends Plugin {
             this.focusButton.setAttribute('aria-label', this.data[STORAGE_NAME].desktopFoldKey === "right" ? this.i18n.buttonTextRight : this.i18n.buttonTextLeft );
         } else if (!isFirst && this.originalButtonText !== ariaLabel) {
             // 如果不修改按钮文案，并且不是第一次调用，并且原始文案和当前文案不一致，则恢复原始文案
-            this.focusButton.setAttribute('aria-label', this.originalButtonText);
+            this.restoreButtonText();
         }
+    }
+
+    private restoreButtonText = () => {
+        if (this.isMobile) return;
+        this.focusButton.setAttribute('aria-label', this.originalButtonText);
     }
 
     private leftClickHandler = (e: MouseEvent) => {
