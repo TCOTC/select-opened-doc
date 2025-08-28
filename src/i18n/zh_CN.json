@@ -1,0 +1,13 @@
+{
+  "onload": "插件已启用",
+  "onunload": "插件已禁用",
+  "uninstall": "插件已卸载",
+  "onloadFailed": "插件加载失败",
+  "desktopFoldKey": "桌面端折叠定位的方式",
+  "changeButtonText": "是否修改按钮文案",
+  "buttonTextLeft": "左键折叠定位, 右键定位",
+  "buttonTextRight": "左键定位, 右键折叠定位",
+  "mobileFoldKey": "移动端折叠定位的方式",
+  "mobileFoldKeyClick": "单击折叠定位",
+  "mobileFoldKeyLongPress": "长按折叠定位"
+}
