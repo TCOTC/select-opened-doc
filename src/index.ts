@@ -87,14 +87,13 @@ export default class SelectOpenedDocPlugin extends Plugin {
     }
 
     onLayoutReady() {
-        this.focusButton = document.querySelector(".sy__file .block__icon[data-type='focus']") || 
-                           document.querySelector("#sidebar .fn__flex-column[data-type='sidebar-file'] .toolbar .toolbar__icon[data-type='focus']");
+        this.focusButton = document.querySelector(":is(.sy__file .block__icon, #sidebar .fn__flex-column[data-type='sidebar-file'] .toolbar .toolbar__icon)[data-type='focus']");
         if (!this.focusButton) {
             console.log(this.displayName, this.i18n.onloadFailed);
             return;
         }
 
-        // 为左键和右键单击添加相应的监听器
+        // 为鼠标左键和鼠标右键单击添加相应的监听器
         this.focusButton.addEventListener('click', this.leftClickHandler);
         this.focusButton.addEventListener('contextmenu', this.rightClickHandler);
         // 移动端监听触摸事件
@@ -148,12 +147,12 @@ export default class SelectOpenedDocPlugin extends Plugin {
 
     private leftClickHandler = (e: MouseEvent) => {
         e.preventDefault();
-        this.collapseDocTree("left");
+        this.selectOpenedDoc("left");
     }
 
     private rightClickHandler = (e: MouseEvent) => {
         e.preventDefault();
-        this.collapseDocTree("right");
+        this.selectOpenedDoc("right");
     }
 
     // 用于存储长按定时器的 ID
@@ -167,7 +166,7 @@ export default class SelectOpenedDocPlugin extends Plugin {
         // 开始计时，如果 300ms 内没有 touchend 事件，则认为是长按
         this.longPressTimeout = setTimeout(() => {
             this.isLongPress = true;
-            this.collapseDocTree("longPress");
+            this.selectOpenedDoc("longPress");
         }, 300);
     }
 
@@ -178,7 +177,7 @@ export default class SelectOpenedDocPlugin extends Plugin {
         if (this.isLongPress) {
             this.isLongPress = false;
         } else {
-            this.collapseDocTree("click");
+            this.selectOpenedDoc("click");
         }
     }
 
@@ -188,39 +187,62 @@ export default class SelectOpenedDocPlugin extends Plugin {
      * 折叠文档树
      * @param type 折叠定位的方式
      */
-    private collapseDocTree = (type: "left" | "right" | "click" | "longPress") => {
-        console.log(this.data[STORAGE_NAME].desktopFoldKey, this.data[STORAGE_NAME].mobileFoldKey);
+    private selectOpenedDoc = (type: "left" | "right" | "click" | "longPress") => {
         if (![this.data[STORAGE_NAME].desktopFoldKey, this.data[STORAGE_NAME].mobileFoldKey].includes(type)) {
-            console.log("只定位当前的文档 |", type);
-            // 定位当前的文档，跟原来的方法一致
+            // 定位当前的文档，跟原来的交互一致
             this.expandDocTree();
         } else {
-            console.log("定位当前的文档并折叠其他路径展开的文档 |", type);
-            // TODO: 定位文档树并且折叠其他路径展开的文档，使用 getActiveEditor
-            const fileTreeLists = document.querySelectorAll(".layout-tab-container > .file-tree > .fn__flex-1 > ul.b3-list[data-url]");
+            // 折叠其他路径展开的文档，然后定位当前的文档
+            const currentProtyle = getActiveEditor(false)?.protyle;
+            const notebookId = currentProtyle?.notebookId;
+            const path = currentProtyle?.path;
 
-            // TODO: 适配移动端，看看思源源码
-            fileTreeLists.forEach(list => {
-                const fragment = new DocumentFragment();
-                Array.from(list.children).forEach(item => {
-                    if (item.matches('li.b3-list-item')) {
-                        const toggleElement = item.querySelector('.b3-list-item__toggle');
-                        const arrowElement = item.querySelector('.b3-list-item__arrow');
+            const notebookElementLists = document.querySelectorAll(":is(.sy__file, #sidebar .fn__flex-column[data-type='sidebar-file']) .b3-list-item[data-type='navigation-root']");
+            notebookElementLists.forEach(notebookElement => {
+                const parentElement = notebookElement.parentElement;
+                if (parentElement && notebookId && path && parentElement.dataset.url === notebookId) {
+                    // 当前文档所在的笔记本单独处理
+                    let ulRootElement = notebookElement.nextElementSibling;
+                    while (ulRootElement) {
+                        if (ulRootElement.tagName.toUpperCase() === "UL") break;
+                        ulRootElement = ulRootElement.nextElementSibling;
+                    }
+                    if (ulRootElement) {
+                        const ulElements = ulRootElement.getElementsByTagName("ul");
+                        // 从 path 中按顺序提取所有形如“时间戳 + 7 位随机字符”的文档 ID
+                        const idList = path.match(/\d{14}-\w{7}/g);
+                        // 利用 HTMLCollection 的动态特性，使用 while 循环处理元素
+                        let i = 0;
+                        while (i < ulElements.length) {
+                            const ulElement = ulElements[i];
+                            const liElement = ulElement.previousElementSibling;
+                            // 如果 liElement 不在当前路径，则移除 ulElement
+                            if (liElement && !idList.includes(liElement.getAttribute("data-node-id"))) {
+                                const arrowElement = liElement.querySelector(".b3-list-item__arrow");
+                                if (arrowElement) arrowElement.classList.remove('b3-list-item__arrow--open');
 
-                        if (toggleElement && arrowElement.classList.contains('b3-list-item__arrow--open')) {
-                            arrowElement.classList.remove('b3-list-item__arrow--open');
-
-                            const nextSibling = item.nextElementSibling;
-                            if (nextSibling && nextSibling.matches('ul')) {
-                                fragment.appendChild(nextSibling);
+                                ulElement.remove();
+                                // 移除后 ulElements 会自动更新，当前索引 i 不变
+                            } else {
+                                // 如果是路径上的节点，跳过，处理下一个
+                                i++;
                             }
                         }
                     }
-                });
-
-                // 批量清空节点
-                requestAnimationFrame(() => fragment.replaceChildren());
+                    return;
+                } else {
+                    const arrowElement = notebookElement.querySelector('.b3-list-item__arrow');
+                    if (arrowElement) arrowElement.classList.remove('b3-list-item__arrow--open');
+    
+                    let ulElement = notebookElement.nextElementSibling;
+                    while (ulElement) {
+                        if (ulElement.tagName.toUpperCase() === "UL") break;
+                        ulElement = ulElement.nextElementSibling;
+                    }
+                    if (ulElement) ulElement.remove();
+                }
             });
+
             this.expandDocTree();
         }
     }
