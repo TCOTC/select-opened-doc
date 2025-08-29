@@ -89,7 +89,7 @@ export default class SelectOpenedDocPlugin extends Plugin {
     onLayoutReady() {
         this.focusButton = document.querySelector(":is(.sy__file .block__icon, #sidebar .fn__flex-column[data-type='sidebar-file'] .toolbar .toolbar__icon)[data-type='focus']");
         if (!this.focusButton) {
-            console.log(this.displayName, this.i18n.onloadFailed);
+            console.error(this.displayName, this.i18n.onloadFailed);
             return;
         }
 
