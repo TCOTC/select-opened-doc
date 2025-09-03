@@ -9,5 +9,6 @@
   "buttonTextRight": "左鍵定位, 右鍵摺疊定位",
   "mobileFoldKey": "移動端摺疊定位的方式",
   "mobileFoldKeyClick": "單擊摺疊定位",
-  "mobileFoldKeyLongPress": "長按摺疊定位"
+  "mobileFoldKeyLongPress": "長按摺疊定位",
+  "noOpenedDoc": "沒有獲取到當前打開的文檔"
 }

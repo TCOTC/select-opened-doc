@@ -9,5 +9,6 @@
   "buttonTextRight": "Left locate, Right fold and locate",
   "mobileFoldKey": "Mobile fold and locate method",
   "mobileFoldKeyClick": "Click fold and locate",
-  "mobileFoldKeyLongPress": "Long press fold and locate"
+  "mobileFoldKeyLongPress": "Long press fold and locate",
+  "noOpenedDoc": "No currently opened document found"
 }

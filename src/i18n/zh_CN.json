@@ -9,5 +9,6 @@
   "buttonTextRight": "左键定位, 右键折叠定位",
   "mobileFoldKey": "移动端折叠定位的方式",
   "mobileFoldKeyClick": "单击折叠定位",
-  "mobileFoldKeyLongPress": "长按折叠定位"
+  "mobileFoldKeyLongPress": "长按折叠定位",
+  "noOpenedDoc": "没有获取到当前打开的文档"
 }

@@ -3,6 +3,7 @@ import {
     Setting,
     getActiveEditor,
     getFrontend,
+    expandDocTree,
 } from "siyuan";
 import "./index.scss";
 
@@ -199,12 +200,18 @@ export default class SelectOpenedDocPlugin extends Plugin {
      * @param type 折叠定位的方式
      */
     private selectOpenedDoc = (type: "left" | "right" | "click" | "longPress") => {
+        const currentProtyle = getActiveEditor(false)?.protyle;
+        const blockId = currentProtyle?.block?.id;
+        if (!blockId) {
+            console.warn(this.displayName, this.i18n.noOpenedDoc);
+            return;
+        }
+        
         if (![this.data[STORAGE_NAME].desktopFoldKey, this.data[STORAGE_NAME].mobileFoldKey].includes(type)) {
-            // 定位当前的文档，跟原来的交互一致
-            this.expandDocTree();
+            // 定位当前的文档
+            expandDocTree({ id: blockId });
         } else {
             // 折叠其他路径展开的文档，然后定位当前的文档
-            const currentProtyle = getActiveEditor(false)?.protyle;
             const notebookId = currentProtyle?.notebookId;
             const path = currentProtyle?.path;
 
@@ -254,38 +261,7 @@ export default class SelectOpenedDocPlugin extends Plugin {
                 }
             });
 
-            this.expandDocTree();
+            expandDocTree({ id: blockId });
         }
-    }
-
-    /**
-     * 展开文档树
-     */
-    private expandDocTree = () => {
-        if (!this.focusButton) return;
-
-        // TODO跟进: 换成原生方法 https://github.com/siyuan-note/siyuan/issues/15639
-        
-        // 移除点击事件监听器，避免模拟点击触发事件监听器
-        this.focusButton.removeEventListener('click', this.leftClickHandler);
-
-        // 模拟点击按钮
-        if (typeof this.focusButton.click === 'function') {
-            // 使用标准的 click 方法
-            this.focusButton.click();
-        } else {
-            // 移动端按钮没有 click 方法，使用备用方法：创建并触发点击事件
-            const clickEvent = new MouseEvent('click', {
-                bubbles: true,
-                cancelable: true,
-                view: window
-            });
-            this.focusButton.dispatchEvent(clickEvent);
-        }
-    
-        // 恢复点击事件监听器
-        setTimeout(() => {
-            this.focusButton.addEventListener('click', this.leftClickHandler);
-        }, 0);
     }
 }
