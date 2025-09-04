@@ -158,12 +158,14 @@ export default class SelectOpenedDocPlugin extends Plugin {
     }
 
     private leftClickHandler = (e: MouseEvent) => {
-        e.preventDefault();
+        // e.preventDefault();
+        e.stopPropagation();
         this.selectOpenedDoc("left");
     }
 
     private rightClickHandler = (e: MouseEvent) => {
-        e.preventDefault();
+        // e.preventDefault();
+        e.stopPropagation();
         this.selectOpenedDoc("right");
     }
 
@@ -174,7 +176,8 @@ export default class SelectOpenedDocPlugin extends Plugin {
     private isLongPress = false;
 
     private touchstartHandler = (e: TouchEvent) => {
-        e.preventDefault();
+        // e.preventDefault(); 阻止默认行为会导致移动端点击按钮之后不清除文档树中的 hover 状态，导致之前的 .b3-list-item--focus 类名的文档还是同样的 background-color: var(--b3-list-hover); 样式
+        e.stopPropagation();
         // 开始计时，如果 300ms 内没有 touchend 事件，则认为是长按
         this.longPressTimeout = setTimeout(() => {
             this.isLongPress = true;
@@ -183,7 +186,8 @@ export default class SelectOpenedDocPlugin extends Plugin {
     }
 
     private touchendHandler = (e: TouchEvent) => {
-        e.preventDefault();
+        // e.preventDefault();
+        e.stopPropagation();
         // 清除长按定时器
         clearTimeout(this.longPressTimeout);
         if (this.isLongPress) {
