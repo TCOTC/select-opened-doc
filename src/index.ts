@@ -160,10 +160,19 @@ export default class SelectOpenedDocPlugin extends Plugin {
     private leftClickHandler = (e: MouseEvent) => {
         // e.preventDefault();
         e.stopPropagation();
+        
+        // 在移动端，如果已经处理过 touch 事件，则忽略 click 事件
+        if (this.isMobile && this.isTouchHandled) {
+            this.isTouchHandled = false; // 重置标志
+            return;
+        }
+        
         this.selectOpenedDoc("left");
+        // console.log("leftClickHandler");
     }
 
     private rightClickHandler = (e: MouseEvent) => {
+        // console.log("rightClickHandler");
         // e.preventDefault();
         e.stopPropagation();
         this.selectOpenedDoc("right");
@@ -175,25 +184,37 @@ export default class SelectOpenedDocPlugin extends Plugin {
     // 用于避免触发 longPress 之后后重复触发 click
     private isLongPress = false;
 
+    // 用于避免移动端 touch 事件后触发 click 事件
+    private isTouchHandled = false;
+
     private touchstartHandler = (e: TouchEvent) => {
+        // console.log("touchstartHandler");
         // e.preventDefault(); 阻止默认行为会导致移动端点击按钮之后不清除文档树中的 hover 状态，导致之前的 .b3-list-item--focus 类名的文档还是同样的 background-color: var(--b3-list-hover); 样式
         e.stopPropagation();
+        
+        // 重置 touch 处理标志，准备处理新的触摸事件
+        this.isTouchHandled = false;
+        
         // 开始计时，如果 300ms 内没有 touchend 事件，则认为是长按
         this.longPressTimeout = setTimeout(() => {
             this.isLongPress = true;
             this.selectOpenedDoc("longPress");
+            this.isTouchHandled = true; // 标记 touch 事件已处理
         }, 300);
     }
 
     private touchendHandler = (e: TouchEvent) => {
+        // console.log("touchendHandler");
         // e.preventDefault();
         e.stopPropagation();
         // 清除长按定时器
         clearTimeout(this.longPressTimeout);
         if (this.isLongPress) {
             this.isLongPress = false;
+            this.isTouchHandled = true; // 标记 touch 事件已处理
         } else {
             this.selectOpenedDoc("click");
+            this.isTouchHandled = true; // 标记 touch 事件已处理
         }
     }
 
