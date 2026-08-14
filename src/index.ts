@@ -5,7 +5,6 @@ import {
     getFrontend,
     getModelByDockType,
 } from "siyuan";
-import "./index.scss";
 
 const STORAGE_NAME = "select-opened-doc-config.json";
 
@@ -233,6 +232,21 @@ export default class SelectOpenedDocPlugin extends Plugin {
         return file.selectItem(notebookId, path);
     }
 
+    private getNextUlElement = (liElement: Element) => {
+        let ulElement = liElement.nextElementSibling;
+        while (ulElement) {
+            if (ulElement.tagName.toUpperCase() === "UL") break;
+            ulElement = ulElement.nextElementSibling;
+        }
+        return ulElement;
+    }
+
+    private collapseDocTreeItem = (liElement: Element) => {
+        const arrowElement = liElement.querySelector(".b3-list-item__arrow");
+        if (arrowElement) arrowElement.classList.remove("b3-list-item__arrow--open");
+        this.getNextUlElement(liElement)?.remove();
+    }
+
     /**
      * 折叠文档树
      * @param type 折叠定位的方式
@@ -254,28 +268,21 @@ export default class SelectOpenedDocPlugin extends Plugin {
             const notebookElementLists = document.querySelectorAll(":is(.sy__file, #sidebar .fn__flex-column[data-type='sidebar-file']) .b3-list-item[data-type='navigation-root']");
             notebookElementLists.forEach(notebookElement => {
                 const parentElement = notebookElement.parentElement;
-                if (parentElement && notebookId && path && parentElement.dataset.url === notebookId) {
+                if (parentElement && parentElement.dataset.url === notebookId) {
                     // 当前文档所在的笔记本单独处理
-                    let ulRootElement = notebookElement.nextElementSibling;
-                    while (ulRootElement) {
-                        if (ulRootElement.tagName.toUpperCase() === "UL") break;
-                        ulRootElement = ulRootElement.nextElementSibling;
-                    }
+                    const ulRootElement = this.getNextUlElement(notebookElement);
                     if (ulRootElement) {
-                        const ulElements = ulRootElement.getElementsByTagName("ul");
                         // 从 path 中按顺序提取所有形如“时间戳 + 7 位随机字符”的文档 ID
-                        const idList = path.match(/\d{14}-\w{7}/g);
+                        const idList: string[] = path.match(/\d{14}-\w{7}/g) || [];
+                        const ulElements = ulRootElement.getElementsByTagName("ul");
                         // 利用 HTMLCollection 的动态特性，使用 while 循环处理元素
                         let i = 0;
                         while (i < ulElements.length) {
                             const ulElement = ulElements[i];
                             const liElement = ulElement.previousElementSibling;
                             // 如果 liElement 不在当前路径，则移除 ulElement
-                            if (liElement && !idList.includes(liElement.getAttribute("data-node-id"))) {
-                                const arrowElement = liElement.querySelector(".b3-list-item__arrow");
-                                if (arrowElement) arrowElement.classList.remove('b3-list-item__arrow--open');
-
-                                ulElement.remove();
+                            if (liElement && !idList.includes(liElement.getAttribute("data-node-id") || "")) {
+                                this.collapseDocTreeItem(liElement);
                                 // 移除后 ulElements 会自动更新，当前索引 i 不变
                             } else {
                                 // 如果是路径上的节点，跳过，处理下一个
@@ -285,15 +292,7 @@ export default class SelectOpenedDocPlugin extends Plugin {
                     }
                     return;
                 } else {
-                    const arrowElement = notebookElement.querySelector('.b3-list-item__arrow');
-                    if (arrowElement) arrowElement.classList.remove('b3-list-item__arrow--open');
-    
-                    let ulElement = notebookElement.nextElementSibling;
-                    while (ulElement) {
-                        if (ulElement.tagName.toUpperCase() === "UL") break;
-                        ulElement = ulElement.nextElementSibling;
-                    }
-                    if (ulElement) ulElement.remove();
+                    this.collapseDocTreeItem(notebookElement);
                 }
             });
 

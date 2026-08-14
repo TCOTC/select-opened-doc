@@ -2,7 +2,7 @@
   "name": "select-opened-doc",
   "author": "TCOTC",
   "url": "https://github.com/TCOTC/select-opened-doc",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "minAppVersion": "3.7.3",
   "backends": [
     "all"
@@ -25,20 +25,5 @@
     "zh_CN": "README_zh_CN.md",
     "zh_CHT": "README_zh_CHT.md"
   },
-  "funding": {
-    "openCollective": "",
-    "patreon": "",
-    "github": "",
-    "custom": [
-      "https://bento.me/jeffff"
-    ]
-  },
-  "keywords": [
-    "expand doc tree",
-    "collapse doc tree",
-    "expand document tree",
-    "collapse document tree",
-    "展开文档树",
-    "折叠文档树"
-  ]
+  "funding": {"custom": ["https://mytemos.com/"]}
 }
