@@ -3,7 +3,7 @@ import {
     Setting,
     getActiveEditor,
     getFrontend,
-    expandDocTree,
+    getModelByDockType,
 } from "siyuan";
 import "./index.scss";
 
@@ -221,25 +221,36 @@ export default class SelectOpenedDocPlugin extends Plugin {
     // mousedown mouseup 跟 click 冲突了，导致触发两次，所以不使用
 
     /**
+     * 定位当前打开的文档，不展开其子文档
+     */
+    private locateOpenedDoc = (notebookId: string, path: string) => {
+        const file = getModelByDockType("file") as {
+            selectItem: (notebookId: string, filePath: string) => Promise<HTMLElement | undefined>;
+        };
+        if (!file?.selectItem) {
+            return;
+        }
+        return file.selectItem(notebookId, path);
+    }
+
+    /**
      * 折叠文档树
      * @param type 折叠定位的方式
      */
     private selectOpenedDoc = (type: "left" | "right" | "click" | "longPress") => {
         const currentProtyle = getActiveEditor(false)?.protyle;
-        const blockId = currentProtyle?.block?.id;
-        if (!blockId) {
+        const notebookId = currentProtyle?.notebookId;
+        const path = currentProtyle?.path;
+        if (!notebookId || !path) {
             console.warn(this.displayName, this.i18n.noOpenedDoc);
             return;
         }
         
         if (![this.data[STORAGE_NAME].desktopFoldKey, this.data[STORAGE_NAME].mobileFoldKey].includes(type)) {
             // 定位当前的文档
-            expandDocTree({ id: blockId });
+            this.locateOpenedDoc(notebookId, path);
         } else {
             // 折叠其他路径展开的文档，然后定位当前的文档
-            const notebookId = currentProtyle?.notebookId;
-            const path = currentProtyle?.path;
-
             const notebookElementLists = document.querySelectorAll(":is(.sy__file, #sidebar .fn__flex-column[data-type='sidebar-file']) .b3-list-item[data-type='navigation-root']");
             notebookElementLists.forEach(notebookElement => {
                 const parentElement = notebookElement.parentElement;
@@ -286,7 +297,7 @@ export default class SelectOpenedDocPlugin extends Plugin {
                 }
             });
 
-            expandDocTree({ id: blockId });
+            this.locateOpenedDoc(notebookId, path);
         }
     }
 }
