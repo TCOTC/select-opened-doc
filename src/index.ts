@@ -12,7 +12,7 @@ const STORAGE_NAME = "select-opened-doc-config.json";
 export default class SelectOpenedDocPlugin extends Plugin {
     private isMobile: boolean;
     private focusButton: HTMLElement;
-    private originalButtonText: string;
+    private originalButtonText = "";
 
     async onload() {
         const frontEnd = getFrontend();
@@ -24,7 +24,7 @@ export default class SelectOpenedDocPlugin extends Plugin {
         this.data[STORAGE_NAME].desktopFoldKey ??= "right"; // 默认是鼠标右键折叠文档树
         this.data[STORAGE_NAME].mobileFoldKey ??= "longPress"; // 默认是长按折叠文档树
         this.data[STORAGE_NAME].changeButtonText ??= // 如果是插件 i18n 支持的语种，则默认修改按钮文案，否则不修改
-            ["zh_CN", "zh_CHT", "en_US"].includes(window.siyuan.config.lang) ? true : false;
+            ["zh-CN", "zh-TW", "en"].includes(window.siyuan.config.appearance.lang) ? true : false;
 
         // 插件设置
         this.setting = new Setting({
@@ -120,15 +120,6 @@ export default class SelectOpenedDocPlugin extends Plugin {
     }
 
     async uninstall() {
-        // 卸载事件监听器
-        this.focusButton.removeEventListener('click', this.leftClickHandler);
-        this.focusButton.removeEventListener('contextmenu', this.rightClickHandler);
-        this.focusButton.removeEventListener('touchstart', this.touchstartHandler);
-        this.focusButton.removeEventListener('touchend', this.touchendHandler);
-
-        // 还原按钮文案
-        this.restoreButtonText();
-
         // 删除配置
         await this.removeData(STORAGE_NAME);
 
@@ -167,12 +158,9 @@ export default class SelectOpenedDocPlugin extends Plugin {
         }
         
         this.selectOpenedDoc("left");
-        // console.log("leftClickHandler");
     }
 
     private rightClickHandler = (e: MouseEvent) => {
-        // console.log("rightClickHandler");
-        // e.preventDefault();
         e.stopPropagation();
         this.selectOpenedDoc("right");
     }
@@ -187,7 +175,6 @@ export default class SelectOpenedDocPlugin extends Plugin {
     private isTouchHandled = false;
 
     private touchstartHandler = (e: TouchEvent) => {
-        // console.log("touchstartHandler");
         // e.preventDefault(); 阻止默认行为会导致移动端点击按钮之后不清除文档树中的 hover 状态，导致之前的 .b3-list-item--focus 类名的文档还是同样的 background-color: var(--b3-list-hover); 样式
         e.stopPropagation();
         
@@ -203,8 +190,6 @@ export default class SelectOpenedDocPlugin extends Plugin {
     }
 
     private touchendHandler = (e: TouchEvent) => {
-        // console.log("touchendHandler");
-        // e.preventDefault();
         e.stopPropagation();
         // 清除长按定时器
         clearTimeout(this.longPressTimeout);
