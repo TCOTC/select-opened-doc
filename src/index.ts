@@ -217,20 +217,16 @@ export default class SelectOpenedDocPlugin extends Plugin {
         return file.selectItem(notebookId, path);
     }
 
-    private getNextUlElement = (liElement: Element) => {
-        let ulElement = liElement.nextElementSibling;
-        while (ulElement) {
-            if (ulElement.tagName.toUpperCase() === "UL") break;
-            ulElement = ulElement.nextElementSibling;
-        }
-        return ulElement;
-    }
-
-    private collapseDocTreeItem = (liElement: Element) => {
-        const arrowElement = liElement.querySelector(".b3-list-item__arrow");
-        if (arrowElement) arrowElement.classList.remove("b3-list-item__arrow--open");
-        this.getNextUlElement(liElement)?.remove();
-    }
+    /**
+     * 折叠文档树中的全部节点。
+     * 文档树是扁平虚拟列表，只有原生控制器知道折叠状态，直接改 DOM 不会被树模型感知。
+     */
+    private collapseAllDocTree = () => {
+        const docTree = (getModelByDockType("file") as {
+            docTree?: { collapseAll: () => void };
+        } | undefined)?.docTree;
+        docTree?.collapseAll();
+    };
 
     /**
      * 折叠文档树
@@ -245,43 +241,10 @@ export default class SelectOpenedDocPlugin extends Plugin {
             return;
         }
         
-        if (![this.data[STORAGE_NAME].desktopFoldKey, this.data[STORAGE_NAME].mobileFoldKey].includes(type)) {
-            // 定位当前的文档
-            this.locateOpenedDoc(notebookId, path);
-        } else {
-            // 折叠其他路径展开的文档，然后定位当前的文档
-            const notebookElementLists = document.querySelectorAll(":is(.sy__file, #sidebar .fn__flex-column[data-type='sidebar-file']) .b3-list-item[data-type='navigation-root']");
-            notebookElementLists.forEach(notebookElement => {
-                const parentElement = notebookElement.parentElement;
-                if (parentElement && parentElement.dataset.url === notebookId) {
-                    // 当前文档所在的笔记本单独处理
-                    const ulRootElement = this.getNextUlElement(notebookElement);
-                    if (ulRootElement) {
-                        // 从 path 中按顺序提取所有形如“时间戳 + 7 位随机字符”的文档 ID
-                        const idList: string[] = path.match(/\d{14}-\w{7}/g) || [];
-                        const ulElements = ulRootElement.getElementsByTagName("ul");
-                        // 利用 HTMLCollection 的动态特性，使用 while 循环处理元素
-                        let i = 0;
-                        while (i < ulElements.length) {
-                            const ulElement = ulElements[i];
-                            const liElement = ulElement.previousElementSibling;
-                            // 如果 liElement 不在当前路径，则移除 ulElement
-                            if (liElement && !idList.includes(liElement.getAttribute("data-node-id") || "")) {
-                                this.collapseDocTreeItem(liElement);
-                                // 移除后 ulElements 会自动更新，当前索引 i 不变
-                            } else {
-                                // 如果是路径上的节点，跳过，处理下一个
-                                i++;
-                            }
-                        }
-                    }
-                    return;
-                } else {
-                    this.collapseDocTreeItem(notebookElement);
-                }
-            });
-
-            this.locateOpenedDoc(notebookId, path);
+        if ([this.data[STORAGE_NAME].desktopFoldKey, this.data[STORAGE_NAME].mobileFoldKey].includes(type)) {
+            // 折叠全部节点，随后定位会自动展开当前文档的路径
+            this.collapseAllDocTree();
         }
-    }
+        void this.locateOpenedDoc(notebookId, path);
+    };
 }
