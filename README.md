@@ -1,15 +1,3 @@
-This plugin modifies the interaction of the "Select Opened Doc" button in the document tree.
+# Select Opened Doc
 
-Default configuration:
-
-**Desktop:**
-
-- **Left Click**: Select opened document
-- **Right Click**: Select opened document and collapse other expanded documents
-
-**Mobile:**
-
-- **Single Tap**: Select opened document
-- **Long Press**: Select opened document and collapse other expanded documents
-
-Can be modified in plugin settings.
+Source code: [TCOTC/siyuan-packages](https://github.com/TCOTC/siyuan-packages/tree/main/plugins/select-opened-doc). This repository only hosts Bazaar releases.

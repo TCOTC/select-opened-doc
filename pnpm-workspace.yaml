@@ -1,5 +1,0 @@
-allowBuilds:
-  "@parcel/watcher": false
-  esbuild: false
-minimumReleaseAgeExclude:
-  - webpack@5.109.2
